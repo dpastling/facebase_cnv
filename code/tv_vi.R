@@ -15,7 +15,7 @@ stopifnot(length(args) == 2)
 
 file.name     <- args[1]
 output.folder <- args[2]
-sample.name   <- gsub("^.+?_([^_]+).txt", "\\1", file.name)
+sample.name   <- gsub("^.+?_([^_]+).csv", "\\1", file.name)
 
 cl <- makeCluster(8)
 registerDoParallel(cl)
@@ -33,8 +33,8 @@ annotation <- select(annotation, Name, Chr, MapInfo, IntensityOnly)
 X <- read.csv(file.name, header = TRUE, skip = 10)
 X <- left_join(X, annotation, by = c("SNP.Name" = "Name"))
 X <- X %>% 
-	filter(! Chr %in% c("0", "MT", "X", "XY", "Y")) %>% 
-	filter(! is.na(Log.R.Ratio)) %>%
+    filter(! Chr %in% c("0", "MT", "X", "XY", "Y")) %>% 
+    filter(! is.na(Log.R.Ratio)) %>%
     arrange(as.numeric(Chr), MapInfo)
 #X <- as.data.frame(X)
 
@@ -44,8 +44,8 @@ increms <- c(20, 2000, 200e3)
 # For some reason, ArrayTV requires the data to be in a matrix. 
 # the object needs to be a one rolumn matrix for it to work.# alternativly you can pass along objects of type ‘BeadStudioSet’, ‘BafLrrSet’, or ‘BafLrrSetList’
 # but is much easier just to select the single column
-temp <- select(X, Log.R.Ratio, MapInfo)
-temp <- as.matrix(temp)
+temp   <- select(X, Log.R.Ratio, MapInfo)
+temp   <- as.matrix(temp)
 tvList <- gcCorrect(object = temp[, "Log.R.Ratio", drop = FALSE],
 	chr = paste0("chr", X$Chr),
 	starts = X$MapInfo,
@@ -57,7 +57,7 @@ tvList <- gcCorrect(object = temp[, "Log.R.Ratio", drop = FALSE],
 X <- mutate(X, corrected.vals = tvList$correctedVals)
 
 # save corrected values
-write.table(X, file = paste0(output.folder, "/X_", X, "_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(X, file = paste0(output.folder, "/corrected_vals_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
 # plot before and after Log.R.Ratios
 
