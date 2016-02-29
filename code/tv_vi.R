@@ -7,7 +7,8 @@ library(dplyr)
 library(ArrayTV)
 library(VanillaICE)
 library(BSgenome.Hsapiens.UCSC.hg19)
-library(doParallel)
+library(doSNOW)
+#library(doParallel)
 
 args <- commandArgs(trailingOnly = TRUE)
 
@@ -17,8 +18,11 @@ file.name     <- args[1]
 output.folder <- args[2]
 sample.name   <- gsub("^.+?_([^_]+).csv", "\\1", file.name)
 
-cl <- makeCluster(8)
-registerDoParallel(cl)
+cl <- makeCluster(2, type = "SOCK")
+registerDoSNOW(cl)
+
+#cl <- makeCluster(8)
+#registerDoParallel(cl)
 
 annotation.data <- "data//Marker_Info_Files/HumanOmni25Exome-8v1_A.csv"
 annotation <- read.csv(annotation.data, header = TRUE, skip = 7)
@@ -27,11 +31,11 @@ annotation <- read.csv(annotation.data, header = TRUE, skip = 7)
 # be labeled like [A/T], while control probes are called something like "DNP (Bgnd)"
 # we will use the presence of an opening bracket as evidence for a SNP
 # Anyway, it turns out that all mapped probes have an IntensityOnly value of 0
-annotation <- mutate(annotation, IntensityOnly = as.numeric(! grepl("\\[", SNP)))
+annotation <- mutate(annotation, IntensityOnly = as.integer(! grepl("\\[", SNP)))
 annotation <- select(annotation, Name, Chr, MapInfo, IntensityOnly)
 
 X <- read.csv(file.name, header = TRUE, skip = 10)
-X <- left_join(X, annotation, by = c("SNP.Name" = "Name"))
+X <- inner_join(X, annotation, by = c("SNP.Name" = "Name"))
 X <- X %>% 
     filter(! Chr %in% c("0", "MT", "X", "XY", "Y")) %>% 
     filter(! is.na(Log.R.Ratio)) %>%
@@ -57,7 +61,7 @@ tvList <- gcCorrect(object = temp[, "Log.R.Ratio", drop = FALSE],
 X <- mutate(X, corrected.vals = tvList$correctedVals)
 
 # save corrected values
-write.table(X, file = paste0(output.folder, "/corrected_vals_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+#write.table(X, file = paste0(output.folder, "/corrected_vals_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
 # plot before and after Log.R.Ratios
 
@@ -70,20 +74,34 @@ write.table(X, file = paste0(output.folder, "/corrected_vals_", sample.name, ".t
 
 
 # think about the Intensity Only flag
-fgr            <- GRanges(paste0("chr", X$Chr), IRanges(X$MapInfo, width = 1), isSnp = X[["IntensityOnly"]] == 0)
+fgr            <- GRanges(
+                      paste0("chr", X$Chr), 
+                      IRanges(X$MapInfo, width = 1), 
+                      isSnp = X$IntensityOnly == 0
+                      )
 fgr            <- SnpGRanges(fgr)
 names(fgr)     <- X[["SNP.Name"]]
 sl             <- seqlevels(BSgenome.Hsapiens.UCSC.hg19)
 seqlevels(fgr) <- sl[sl %in% seqlevels(fgr)]
-seqinfo(fgr)   <- seqinfo(BSgenome.Hsapiens.UCSC.hg19)[seqlevels(fgr),]
+seqinfo(fgr)   <- seqinfo(BSgenome.Hsapiens.UCSC.hg19)[seqlevels(fgr), ]
 fgr            <- sort(fgr)
 
 ## Option 1
 
-temp <- X[, c("corrected.vals", "B.Allele.Freq")]
+#temp <- X[, c("corrected.vals", "B.Allele.Freq")]
+temp <- X[, c("Log.R.Ratio", "B.Allele.Freq")]
 temp <- as.matrix(temp)
 
-snp_expt <- SnpArrayExperiment(cn = temp[, "corrected.vals", drop = F], baf = temp[, "B.Allele.Freq", drop = F], rowRanges = fgr)
+# Test the randomness
+#set.seed(12345)
+set.seed(54321)
+
+#snp_expt <- SnpArrayExperiment(cn = temp[, "corrected.vals", drop = F], baf = temp[, "B.Allele.Freq", drop = F], rowRanges = fgr)
+snp_expt <- SnpArrayExperiment(
+                cn = temp[, "Log.R.Ratio", drop = FALSE], 
+                baf = temp[, "B.Allele.Freq", drop = FALSE], 
+                rowRanges = fgr
+            )
 param    <- EmissionParam()
 fit1     <- hmm2(snp_expt, param)
 
@@ -94,7 +112,8 @@ stopCluster(cl)
 filter_param <- FilterParam(numberFeatures = 5, probability = 0.95)
 result <- cnvSegs(fit1, filter_param)
 result <- as.data.frame(result)
-write.table(result, file = paste0(output.folder, "/VICE_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+#write.table(result, file = paste0(output.folder, "/VICE_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(result, file = paste0(output.folder, "/VICE_noTV_test3_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 
 
 

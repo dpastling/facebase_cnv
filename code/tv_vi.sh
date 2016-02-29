@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #BSUB -J ice_ice_baby[1-14]
 #BSUB -e logs/ice_%J.log
 #BSUB -o logs/ice_%J.out
