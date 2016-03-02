@@ -2,28 +2,22 @@
 options(stringsAsFactors = FALSE)
 
 library(VanillaICE)
-#library(BSgenome.Hsapiens.UCSC.hg18)
 library(BSgenome.Hsapiens.UCSC.hg19)
 library(dplyr)
 library(foreach)
-#library(doSNOW)
 library(data.table)
 
 registerDoSEQ()
 
-#cl <- makeCluster(12, type = "SOCK")
-#registerDoSNOW(cl)
+set.seed(12345)
 
-#extdir <- system.file("extdata", package = "VanillaICE", mustWork = TRUE)
-#data.files  <- list.files(extdir, pattern = "FinalReport", full.names = TRUE)
-
-extdir <- "./"
-annotation.file <- list.files(extdir, pattern = "SNP_info", full.names = TRUE)
+extdir <- "tests/chr16"
 data.files <- list.files(extdir, pattern = "sample_", full.names = TRUE)
+annotation.file <- list.files(extdir, pattern = "SNP_info", full.names = TRUE)
+features <- read.csv(annotation.file, header = TRUE)
 
-features <- read.csv(annotation.file)
-
-#file.index <- 2
+# Choose one of the files to analyze for Option 1
+file.index <- 2
 
 ##########################################################
 #
@@ -31,10 +25,6 @@ features <- read.csv(annotation.file)
 #
 ##########################################################
 
-fit_opt1 <- list()
-for(file.index in 1:length(data.files))
-{
-#X <- read.csv(data.files[file.index], header = TRUE, skip = 9)
 X <- read.csv(data.files[file.index], header = TRUE)
 X <- inner_join(X, features, by = c("SNP.Name" = "Name"))
 X <- X %>% arrange(as.numeric(Chr), Position)
@@ -54,15 +44,14 @@ fgr            <- sort(fgr)
 temp <- X[, c("Log.R.Ratio", "B.Allele.Freq")]
 temp <- as.matrix(temp)
 
-snp_expt <- SnpArrayExperiment(
+snp_expt1 <- SnpArrayExperiment(
                 cn = temp[, "Log.R.Ratio", drop = FALSE], 
                 baf = temp[, "B.Allele.Freq", drop = FALSE], 
                 rowRanges = fgr
             )
 param    <- EmissionParam()
-fit1     <- hmm2(snp_expt, param)
-fit_opt1[[file.index]] <- fit1
-}
+fit1     <- hmm2(snp_expt1, param)
+
 
 ##########################################################
 #
@@ -89,10 +78,10 @@ scan_params <- CopyNumScanParams(
 	gtvar = c("Allele1 - AB", "Allele2 - AB")
 	)
 parseSourceFile(views, scan_params)
-snp_exp <- SnpExperiment(views)
+snp_expt2 <- SnpExperiment(views)
 
 param <- EmissionParam()
-fit2 <- hmm2(snp_exp, param)
+fit2 <- hmm2(snp_expt2, param)
 
 
 ##########################################################
@@ -104,29 +93,25 @@ fit2 <- hmm2(snp_exp, param)
 #filter_param <- FilterParam(numberFeatures = 5, probability = 0.95)
 filter_param <- FilterParam()
 
-for ( file.index in 1:length(fit_opt1))
-{
-    result1 <- cnvSegs(fit_opt1[[file.index]], filter_param)
-    result1 <- as.data.frame(result1)
-    result1 <- result1[, 1:8]
-    
-    result2 <- cnvSegs(fit2[[file.index]], filter_param)
-    result2 <- as.data.frame(result2)
-    
-    #stopCluster(cl)
-    
-    results.match <- identical(result1, result2)
+result1 <- cnvSegs(fit1, filter_param)
+result1 <- as.data.frame(result1)
+result1 <- result1[, 1:8]
 
-    cat("testing file ", file.index, "\n")    
-    if (results.match)
-    {
-        cat("The results are the same!\n")
-    } else {
-        cat("The results do not match\n")
-        print(result1)
-        print(result2)
-    }
+result2 <- cnvSegs(fit2[[file.index]], filter_param)
+result2 <- as.data.frame(result2)
+
+
+results.match <- identical(result1, result2)
+
+if (results.match)
+{
+    cat("The results are the same!\n")
+} else {
+    cat("The results do not match\n")
+    print(result1)
+    print(result2)
 }
+
 
 
 
