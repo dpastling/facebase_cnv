@@ -16,7 +16,7 @@ stopifnot(length(args) == 2)
 
 file.name     <- args[1]
 output.folder <- args[2]
-sample.name   <- gsub("^.+?_([^_]+).csv", "\\1", file.name)
+sample.name   <- gsub("^.+?FinalReport_(.+?).csv", "\\1", file.name)
 
 cl <- makeCluster(12, type = "SOCK")
 registerDoSNOW(cl)
