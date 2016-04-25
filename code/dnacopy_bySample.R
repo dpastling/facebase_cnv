@@ -75,6 +75,7 @@ sdundo.CNA.object <- segment(
 
 segment.smoothed.p <- segments.p(segment.smoothed.CNA.object)
 sdundo.p <- segments.p(sdundo.CNA.object)
+sdundo.p <- filter(sdundo.p, num.mark >= 5)
 
 write.table(segment.smoothed.CNA.object$output, file = paste0(output.folder, "/segment_smoothed_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE) 
 write.table(sdundo.CNA.object$output, file = paste0(output.folder, "/sdundo_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
