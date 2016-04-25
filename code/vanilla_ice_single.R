@@ -59,7 +59,9 @@ tvList <- gcCorrect(object = temp[, "Log.R.Ratio", drop = FALSE],
 X <- mutate(X, corrected.vals = tvList$correctedVals)
 
 # save corrected values
-#write.table(X, file = paste0(output.folder, "/corrected_vals_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+write.table(X, file = paste0(output.folder, "/corrected_vals_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+
+q(save = "no")
 
 # plot before and after Log.R.Ratios
 
