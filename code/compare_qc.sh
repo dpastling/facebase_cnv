@@ -52,7 +52,7 @@ do
     tail -n +2 $penn_file > $penn_bed
 
     # filter copy number 2 regions from the DNAcopy data
-    awk '$11 < -0.1 || $11 > 0.1' $dna_bed > temp.bed
+    awk '$11 < -0.1 || $11 > 0.05' $dna_bed > temp.bed
     mv temp.bed $dna_bed
 
     prefix=$results_folder/${sample}
