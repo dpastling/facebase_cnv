@@ -4,7 +4,7 @@ options(stringsAsFactors = FALSE)
 library(tidyr)
 library(dplyr)
 
-df <- read.delim("stats.txt", header = FALSE)
+df <- read.delim("stats_20160416.txt", header = FALSE)
 colnames(df) <- c("file", "chr", "pos1", "pos2", "n", "stat")
 
 df <- mutate(df, file = gsub("results/vanilla_ice_qc/", "", file))
