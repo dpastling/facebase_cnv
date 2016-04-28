@@ -14,6 +14,9 @@ my %samples = (
 	"06985" => [ "1054736171", "1054736250", "1064733235" ]
 );
 
+my $dup_threshold = 0.05;
+my $del_threshold = -0.1;
+
 my @method = ("vice", "penn", "dna");
 
 foreach my $key (keys %samples)
@@ -26,7 +29,10 @@ foreach my $key (keys %samples)
 	my $output12   = "$folder/$sample\_$replicate1\_$replicate2";
 	foreach my $suffix (@method)
 	{
-		intersect("$file1\_$suffix.bed", "$file2\_$suffix.bed", "$output12\_$suffix.bed");
+		split_file("$file1\_$suffix.bed");
+		split_file("$file2\_$suffix.bed");
+		system("bedtools intersect -u -a $file1\_$suffix\_dup.bed -b $file2\_$suffix\_dup.bed > $output12\_$suffix\_dup.bed");
+		system("bedtools intersect -u -a $file1\_$suffix\_del.bed -b $file2\_$suffix\_del.bed > $output12\_$suffix\_del.bed");
 	} 
 
 	if ($#{ $samples{$key} } > 1)
@@ -37,29 +43,34 @@ foreach my $key (keys %samples)
 		my $output13   = "$folder/$sample\_$replicate1\_$replicate3";
 		foreach my $suffix (@method)
 		{
-			intersect("$file2\_$suffix.bed", "$file3\_$suffix.bed", "$output23\_$suffix.bed");
-			intersect("$file1\_$suffix.bed", "$file3\_$suffix.bed", "$output13\_$suffix.bed");
-			intersect("$output12\_$suffix.bed", "$file3\_$suffix.bed", "$sample\_all\_$suffix.bed");
+			split_file("$file3\_$suffix.bed");
+			system("bedtools intersect -u -a $output12\_$suffix\_dup.bed -b $file3\_$suffix\_dup.bed > $folder/$sample\_all_$suffix\_dup.bed");
+			system("bedtools intersect -u -a $output12\_$suffix\_del.bed -b $file3\_$suffix\_del.bed > $folder/$sample\_all_$suffix\_del.bed");
+
+			system("bedtools intersect -u -a $file1\_$suffix\_dup.bed -b $file3\_$suffix\_dup.bed > $output13\_$suffix\_dup.bed");
+			system("bedtools intersect -u -a $file1\_$suffix\_del.bed -b $file3\_$suffix\_del.bed > $output13\_$suffix\_del.bed");
+				
+			system("bedtools intersect -u -a $file2\_$suffix\_dup.bed -b $file3\_$suffix\_dup.bed > $output23\_$suffix\_dup.bed");
+			system("bedtools intersect -u -a $file2\_$suffix\_del.bed -b $file3\_$suffix\_del.bed > $output23\_$suffix\_del.bed");
 		} 
 	} else {
+		# If there are only two samples then the intersection is all there is
 		foreach my $suffix (@method)
                 {
-                        system("cp $output12\_$suffix.bed $sample\_all\_$suffix.bed");
+                        system("cp $output12\_$suffix\_dup.bed $folder/$sample\_all\_$suffix\_dup.bed");
+                        system("cp $output12\_$suffix\_del.bed $folder/$sample\_all\_$suffix\_del.bed");
                 }
 	}
 }
 
-sub intersect {
-	my $file1  = $_[0];
-	my $file2  = $_[1];
-	my $output = $_[2];
-	# find overlaps and make sure the logR Ratios are in same direction
-	my $vice_command = "bedtools intersect -wo -a $file1 -b $file2 | ";
-	$vice_command .= "awk '(\$11 > 0.1 && \$23 > 0.1) || (\$11 < -0.1 && \$23 < -0.1)' | ";
-	$vice_command .= "cut -f 1-12 > $output";
-	system($vice_command);
-	# do a proper intersect, hopefully trimming regions
-	#system("bedtools intersect -a temp.bed -b file2 > $output");
-	#system("rm temp.bed");
+sub split_file {
+	my $file = $_[0];
+	my $dup = $file;
+	my $del = $file;
+	$dup =~ s/\.bed/_dup.bed/;
+        $del =~ s/\.bed/_del.bed/;
+        system("awk '\$11 > $dup_threshold' $file > $dup");
+        system("awk '\$11 < $del_threshold' $file > $del");
 }
+
 
