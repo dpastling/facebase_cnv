@@ -10,6 +10,7 @@ stopifnot(length(args) == 1)
 
 sample.name      <- args[1]
 sample.name.tidy <- gsub("@", ".", sample.name)
+output.folder    <- "results/logR"
 
 # for penncnv and VICE the first three columns are the chrom, pos1, pos2, like in a bed file
 # Penncnv doesn't have headers
@@ -21,9 +22,9 @@ colnames(penncnv) <- c("chr", "pos1", "pos2", "state", "file", "start_probe", "e
 vice <- read.delim(paste0("results/vanilla_ice/VICE_", sample.name, ".txt"))
 vice <- mutate(vice, seqnames = gsub("chr", "", seqnames))
 
-dnacopy <- read.delim(paste0("results/dnacopy/segment_pvalue_", sample.name.tidy, ".txt"))
+dnacopy <- read.delim(paste0("results/dnacopy_alpha0_1/segment_alpha0_1_", sample.name, ".txt"))
 # Note this filtering needs to be done elsewhere
-dnacopy <- filter(dnacopy, num.mark >= 5)
+#dnacopy <- filter(dnacopy, num.mark >= 5)
 corrected.vals <- read.delim(paste0("data/corrected_vals/corrected_vals_", sample.name, ".txt"))
 
 get_logR <- function(chr, pos1, pos2)
@@ -32,8 +33,8 @@ get_logR <- function(chr, pos1, pos2)
 	filter(Chr == chr & MapInfo >= pos1 & MapInfo <= pos2) %>% 
 	summarise(
 		mean.logR = mean(Log.R.Ratio, na.rm = TRUE), 
-		mean.norm.logR = mean(corrected.vals, na.rm = TRUE), 
-		probes = n()
+		mean.norm.logR = mean(corrected.vals, na.rm = TRUE)
+#		probes = n()
 	) %>%
 	as.data.frame()
 }
@@ -43,7 +44,6 @@ get_logR <- function(chr, pos1, pos2)
 foo <- NULL
 for (i in 1:nrow(vice))
 {
-	cat(i, "\n")
 	foo <- rbind(foo, get_logR(vice[i, "seqnames"], vice[i, "start"], vice[i, "end"]))
 }
 vice <- cbind(vice, foo)
@@ -51,7 +51,6 @@ vice <- cbind(vice, foo)
 foo <- NULL
 for (i in 1:nrow(penncnv))
 {
-	cat(i, "\n")
 	foo <- rbind(foo, get_logR(penncnv[i, "chr"], penncnv[i, "pos1"], penncnv[i, "pos2"]))
 }
 penncnv <- cbind(penncnv, foo)
@@ -59,12 +58,10 @@ penncnv <- cbind(penncnv, foo)
 foo <- NULL
 for (i in 1:nrow(dnacopy))
 {
-	cat(i, "\n")
 	foo <- rbind(foo, get_logR(dnacopy[i, "chrom"], dnacopy[i, "loc.start"], dnacopy[i, "loc.end"]))
 }
 dnacopy <- cbind(dnacopy, foo)
 
-output.folder <- "results/logR"
 
 write.table(penncnv, file = paste0(output.folder, "/penncnv/", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
 write.table(dnacopy, file = paste0(output.folder, "/dnacopy/", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
