@@ -12,26 +12,30 @@ file.name     <- args[1]
 output.folder <- args[2]
 sample.name   <- gsub("^.+?_([^_]+).txt", "\\1", file.name)
 #output.folder <- "results/dnacopy"
-plots.folder  <- "plots/dnacopy"
+#plots.folder  <- "plots/dnacopy"
 
 #X <- read.delim(file.name, check.names = FALSE)
 X <- read.delim(file.name)
 
-array.info <- read.delim("data/Human_Omni25exome.pfb")
-array.info = array.info[, -4]
+#array.info <- read.delim("data/Marazitafacialvariation_11779814_A.pfb")
+#array.info = array.info[, -4]
 
-X <- left_join(X, array.info, by = c('Name' = 'SNP'))
+#X <- left_join(X, array.info, by = c('Name' = 'SNP'))
+#X <- left_join(X, array.info, by = c('SNP.Name' = 'Name'))
 
 # remove probes labeled chr 0, these might be for quality control
 X <- X[X$Chr != 0, ]
 
-lrr.column <- grep("Log.R.Ratio", colnames(X))
-sample.name <- gsub(".Log.R.Ratio", "", colnames(X)[lrr.column])
+#lrr.column <- grep("Log.R.Ratio", colnames(X))
+#sample.name <- gsub(".Log.R.Ratio", "", colnames(X)[lrr.column])
+
+lrr.column <- grep("corrected.vals", colnames(X))
+sample.name <- X[1, "Sample.Name"]
 
 CNA.object <- CNA( 
     cbind(X[,lrr.column]), 
     X$Chr,
-    X$Position, 
+    X$MapInfo, 
     data.type = "logratio",
     sampleid = sample.name
 )
@@ -40,47 +44,7 @@ CNA.object <- CNA(
 smoothed.CNA.object <- smooth.CNA(CNA.object)
 segments <- segment(smoothed.CNA.object, min.width = 5, alpha = 0.1, verbose = 1)
 
-#segment.smoothed.CNA.object <- segment(smoothed.CNA.object, verbose = 1)
-#
-#
-#
-### Visualize Data
-#
-#custom_png <- function(file)
-#{
-#	png(file, width = 1800, height = 1500, res = 300, bg = "white")
-#}
-#
-#### Plot all chromosomes on one scatter plot
-#custom_png(file = paste0(plots.folder, "/genome_wide_", sample.name, ".png"))
-#plot(segment.smoothed.CNA.object, plot.type = "w")
-#dev.off()
-#
-#### Individual faceted plots for each chromosome 
-#custom_png(file = paste0(plots.folder, "/by_chr_", sample.name, ".png"))
-#plot(segment.smoothed.CNA.object, plot.type = "s")
-#dev.off()
-#
-#### Don't understand the point of this plot, maybe means for each chromosome?
-#custom_png(file = paste0(plots.folder, "/segment_means_", sample.name, ".png"))
-#plot(segment.smoothed.CNA.object, plot.type = "p")
-#dev.off()
-#
-#
-## Remove segments that are not at least 3 SDs apart
-#sdundo.CNA.object <- segment(
-#	smoothed.CNA.object,
-#	undo.splits = "sdundo",
-#	undo.SD = 3,
-#	verbose = 1
-#)
-
-#segment.smoothed.p <- segments.p(segment.smoothed.CNA.object)
-#sdundo.p <- segments.p(sdundo.CNA.object)
-#sdundo.p <- filter(sdundo.p, num.mark >= 5)
 
 write.table(segments$output, file = paste0(output.folder, "/segment_alpha0_1_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE) 
-#write.table(segment.smoothed.CNA.object$output, file = paste0(output.folder, "/segment_smoothed_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE) 
-#write.table(sdundo.CNA.object$output, file = paste0(output.folder, "/sdundo_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
-#write.table(segment.smoothed.p, file = paste0(output.folder, "/segment_pvalue_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
-#write.table(sdundo.p, file = paste0(output.folder, "/sdundo_pvalue_", sample.name, ".txt"), sep = "\t", quote = FALSE, row.names = FALSE)
+
+
