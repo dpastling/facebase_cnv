@@ -1,6 +1,9 @@
 
+
 data
 results
 plots
 logs
 tests
+*.tar.gz
+
