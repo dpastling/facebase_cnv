@@ -3,6 +3,25 @@
 
 TODO: summarize the project here
 
+## Getting Started
+
+### Prerequisites
+
+### Installing
+
+### Tesing
+
+## Running the code
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE.md file for details
+
+## Acknowledgments
+
+
+---------------------------------------
+
 ## Overview of the analysis code
 
 ## Notes on the overlaps
