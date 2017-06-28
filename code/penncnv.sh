@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J penncnv[3001-3739]
+#BSUB -J penncnv[1-1000]
 #BSUB -e logs/penncnv_%J.log
 #BSUB -o logs/penncnv_%J.out
 #BSUB -q test
@@ -10,18 +10,12 @@
 
 DATA=data/penncnv
 RESULTS=results/penncnv
-#SAMPLES=($DATA/FinalReport_*)
-SAMPLES=(
-NA18508
-NA18858
-NA18861
-NA06985
-NA18502
-NA18505
-)
+SAMPLES=($DATA/FinalReport_*)
 
 sample_file=${SAMPLES[$(($LSB_JOBINDEX - 1))]}
-sample=`echo $sample_file | perl -pe 's/^.+?FinalReport_(.+?)\.txt$/$1/'`
+sample=`echo $sample_file | perl -pe 's/^.+?\/[^\/]+$/$1/'`
+sample=`echo $sample | perl -pe 's/FinalReport_/$1/'`
+sample=`echo $sample | perl -pe 's/\.txt$/$1/'`
 
 detect_cnv.pl \
 --test \
