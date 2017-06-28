@@ -4,7 +4,7 @@
 #BSUB -o logs/penncnv_%J.out
 #BSUB -q test
 #BSUB -R "select[mem>10] rusage[mem=10]"
-#BSUB -P Tamim
+#BSUB -P Facebase
 
 #3739
 
@@ -27,19 +27,6 @@ detect_cnv.pl \
 --log $RESULTS/sample_${sample}.log \
 --out $RESULTS/sample_${sample}.rawcnv \
 $sample_file
-
-#detect_cnv.pl \
-#--test \
-#--minsnp 5 \
-#--minlength 50000 \
-#--confidence \
-#--hmm data/IlluminaHumanCoreExome_v12-A.hmm \
-#--pfb data/Human_Omni25exome.pfb \
-#--gcmodel data/Human_Omni25exome_GCModel.txt \
-#--log $RESULTS/sample_${sample}.log \
-#--out $RESULTS/sample_${sample}.rawcnv \
-#$sample_file
-#filter_cnv.pl --numsnp 5 --length 50k --output sampleall.filtered.cnv sampleall.rawcnv
 
 convert_cnv.pl --intype penncnv --outtype tab --output $RESULTS/sample_${sample}.tabcnv $RESULTS/sample_${sample}.rawcnv
 
