@@ -10,7 +10,7 @@ library(doSNOW)
 
 args <- commandArgs(trailingOnly = TRUE)
 
-stopifnot(length(args) == 2)
+stopifnot(length(args) == 3)
 
 # for testing
 # file.name <- "data/Spritz_release_genotype_files/Spritz_Omni2-5PlusExome_release_FinalReport_1110@0123841633.csv"
@@ -18,13 +18,15 @@ stopifnot(length(args) == 2)
 
 file.name     <- args[1]
 output.folder <- args[2]
-sample.name   <- gsub("^.+?FinalReport_(.+?).csv", "\\1", file.name)
+features.data <- args[3]
+sample.name   <- gsub("^.+?/([^/]+)$", "\\1", file.name)
+sample.name   <- gsub("FinalReport_", "", sample.name)
+sample.name   <- gsub(".csv$", "", sample.name)
+sample.name   <- gsub(".txt$", "", sample.name)
 
 cl <- makeCluster(6, type = "SOCK")
 registerDoSNOW(cl)
 
-
-features.data <- "data/Marker_Info_Files/HumanOmni25Exome-8v1_A.csv"
 features <- read.csv(features.data, header = TRUE, skip = 7)
 
 # VanillaICE requires a field that identifies a probe as a SNP. All SNPs seem to
