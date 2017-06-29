@@ -16,6 +16,7 @@ X <- read.delim(file.name)
 lrr.column <- "corrected.vals"
 if (! lrr.column %in% colnames(X))
 {
+	warning("The corrected.vals column was not found. For best results, perform GC correction before running DNAcopy.")
 	lrr.column <- grep(".Log.R.Ratio$", colnames(X), value = TRUE)
 }
 stopifnot(all(c("Chr", "MapInfo", "Sample.Name", lrr.column) %in% colnames(X)))
