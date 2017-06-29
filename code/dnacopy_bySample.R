@@ -12,20 +12,23 @@ sample.name   <- gsub("^.+?_([^_]+).txt", "\\1", file.name)
 
 X <- read.delim(file.name)
 
-# remove probes labeled chr 0, these might be for quality control
-X <- X[X$Chr != 0, ]
-
 # Assume we are using the GC corrected values generated from ArrayTV
-lrr.column <- grep("corrected.vals", colnames(X))
-# TODO: check if "corrected.vals" column was found. If not, try to guess at LogR column
-#       stopifnot the required columns not present
+lrr.column <- "corrected.vals"
+if (! lrr.column %in% colnames(X))
+{
+	lrr.column <- grep(".Log.R.Ratio$", colnames(X), value = TRUE)
+}
+stopifnot(all(c("Chr", "MapInfo", "Sample.Name", lrr.column) %in% colnames(X)))
 
 sample.name <- X[1, "Sample.Name"]
 
+# remove probes labeled chr 0, these might be for quality control
+X <- filter(X, Chr != 0)
+
 CNA.object <- CNA( 
-    cbind(X[,lrr.column]), 
-    X$Chr,
-    X$MapInfo, 
+    cbind(X[[lrr.column]]), 
+    X[["Chr"]],
+    X[["MapInfo"]], 
     data.type = "logratio",
     sampleid = sample.name
 )
