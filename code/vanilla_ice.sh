@@ -21,5 +21,5 @@ RESULTS=results/vanilla_ice
 
 sample_file=$DATA/*FinalReport_1141@0123840970.csv
 
-$HOME/R-3.2.3/bin/Rscript code/vanilla_ice_single.R $sample_file $RESULTS
+$HOME/R-3.2.3/bin/Rscript code/vanilla_ice_single.R $sample_file $RESULTS $marker_info
 
